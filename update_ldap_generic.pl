@@ -1,22 +1,27 @@
 #!/usr/bin/perl -w
-#
-# Aleksander Adamowski <aleksander.adamowski@gmail.com>, 2005-2008.
-# Fabrício Godoy <skarllot@gmail.com>, 2013.
-#
-# Version: 0.2
-#
+# by Aleksander Adamowski
+# Wed Apr 27 19:55:55 CEST 2005: initial version
+# Tue May 24 18:49:00 CEST 2005: multi ADD
+# Wed, 23 Apr 2008 12:39:02 +0200: translated everything into English
+# 
+# update_ldap.pl SET 'attribute=value' WHERE '(LDAP_FILTER)'
+# update_ldap.pl ADD 'attribute=value'[,attribute2=value2',...] WHERE '(LDAP_FILTER)'
+# update_ldap.pl REPLACE 'attribute=value' WITH 'attribute=new_value' WHERE '(LDAP_FILTER)'
 
 use Net::LDAP;
-use Config::Simple;
 use File::Glob ':glob';
 use strict;
 
 our $LDAP_CONF = '/etc/openldap/ldap.conf';
-our $PRIV_CONF = '~/.update_ldap.rc';
+our $PRIV_CONF = './update_ldap.rc';
 
+our $uri;
+our $base_dn;
+our $bind_dn;
+our $pw;
 
 if (scalar(@ARGV) < 4 || ($ARGV[2] ne 'WHERE' && $ARGV[2] ne 'WITH')) {
-  print <<EOD
+ print <<'EOD';
 Usage:
  $0 SET 'attribute=value' WHERE '(LDAP_FILTER)'
  $0 ADD 'attribute=value[,attribute2=value2,...]' WHERE '(LDAP_FILTER)'
@@ -42,40 +47,29 @@ Configuration:
  The BIND_DN and PASSWORD options must be set in $PRIV_CONF, e.g.:
 
 BIND_DN=cn=Manager
-PASSWORD=IamDirectoryManager17833#\@913&^#
+PASSWORD=IamDirectoryManager17833#@913&^#
 
- If BIND_DN or PASSWORD isn't specified, it will be asked for interactively.
+ If PASSWORD isn't specified, it will be asked for interactively.
 
 EOD
 } else {
-  my $cfg = new Config::Simple($LDAP_CONF);
-  my $uri = $cfg->param('URI');
-	if (!defined($uri)) {
-    die "URI undefined!\n";
-	}
-  my $base_dn = join(",", $cfg->param('BASE'));
-	if (!defined($base_dn)) {
-    die "BASE undefined!\n";
-	}
-  my $cfg_private = new Config::Simple(glob($PRIV_CONF));
-  my $bind_dn = undef;
-  my $pw = undef;
-  if(defined($cfg_private)) {
-    my $bind_dn = join(",", $cfg_private->param('BIND_DN'));
-    my $pw = $cfg_private->param('PASSWORD');
-  }
-  if (!defined($bind_dn)) {
-    print "Supply bind user (DOMAIN\\Account or CN): ";
-    chomp($bind_dn = <STDIN>);
-    print "\n";
-  }
-  if (!defined($pw)) {
-    system "stty -echo";
-    print "Supply bind password for user $bind_dn:";
-    chomp($pw = <STDIN>);
-    print "\n";
-    system "stty echo";
-  }
+
+  print "Please insert the LDAP Server hostname: ";
+  chomp($uri = <STDIN>);
+
+  print "Please insert the LDAP Server username: ";
+  chomp($bind_dn = <STDIN>);
+
+  system "stty -echo";
+	print "Please insert the LDAP Server password for user $bind_dn\: ";
+	chomp($pw = <STDIN>);
+  print "\n";
+  system "stty echo";
+
+  print "Please insert the LDAP base dn: ";
+  chomp($base_dn = <STDIN>);
+
+
   my $ldap_source = Net::LDAP->new($uri) or die "$@";
   my $mesg = $ldap_source->bind( $bind_dn, password => $pw);
   if ($mesg->code != 0) {
@@ -118,7 +112,7 @@ EOD
         $entry->replace($attr => $value);
         $mesg = $entry->update($ldap_source);
         if ($mesg->code != 0) {
-          print "LDAP Error! ".$mesg->error;
+          print "LDAP Error! ".$mesg->error." --02";
         }
         print "\n";
       }

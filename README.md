@@ -34,8 +34,14 @@ Change the manager for all the marketing employees:
 
   ``update_ldap SET 'manager=uid=pkwasigroch,ou=People,o=MyCompany' WHERE '(ou=marketing)'``
 
-NOTICE: in order for the utility to work, you'll have to provide configuration for the connection parameters. Directory's URI and base DN should be specified in /etc/openldap/ldap.conf. Bind DN and (optionally) password in ~/.update_ldap.rc.
+The syntax for the LDAP_FILTER field can be found at <http://search.cpan.org/~marschap/perl-ldap-0.64/lib/Net/LDAP/Filter.pod>
 
-Download the utility: <https://github.com/skarllot/ldap-update/archive/v0.2.zip>
+The utility will ask you at the beginning to type in:
+- Server hostname/IP
+- LDAP username
+- LDAP password
+- Base DN (from wich node you want to apply your changes)
+
+
 
 This utility has been originally published on <http://olo.org.pl/dr/node/10>
